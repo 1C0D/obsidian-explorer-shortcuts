@@ -24,6 +24,7 @@ declare module "obsidian" {
         "view": View,
         "file": TFile | TFolder,
         "tagEl": HTMLElement,
-        "parent": fileItem
+        "parent": fileItem,
+        "setCollapsed": (collapsed: boolean) => void
     }
 }
