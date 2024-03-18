@@ -1,5 +1,6 @@
-# Obsidian Sample Plugin Modif
+# Obsidian explorer shortcuts
 
+Add useful shortcuts for operations on explorer content 
 
 ## developpement
 (do "npm start" at first or a npm i)

@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin-modif",
-	"name": "Sample Plugin modif",
+	"id": "explorer-shortcuts",
+	"name": "Explorer shortcuts",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "sample plugin modif.",
+	"description": "shortcuts for useful actions in explorer",
 	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+	"authorUrl": "1C0D",
+	"isDesktopOnly": true
 }
