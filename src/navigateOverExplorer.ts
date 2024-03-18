@@ -3,23 +3,15 @@ import { fileItem, TFile, WorkspaceLeaf } from "obsidian";
 import path from "path";
 import { Console } from "./Console";
 import ExplorerShortcuts from "./main";
+import { getElementFromMousePosition } from "./utils";
 
-export async function handleExplorerHotkeys(event: KeyboardEvent, modal: ExplorerShortcuts) {
-    // Console.debug("key", event.key)
-    if (!modal.overExplorer) return
-    if (event.key === 'ArrowUp') {
-        await openLeaf(modal);
-    }
-    if (event.key === 'ArrowDown') {
-        await openLeaf(modal, true);
-    }
-}
+
 
 function getExplorerItems(modal: ExplorerShortcuts) {
     const { workspace } = modal.app;
     const fileExplorerView = workspace.getLeavesOfType("file-explorer")?.first()?.view;
     if (!fileExplorerView) return;
-    Console.debug("fileExplorerView", fileExplorerView)// files and dirs
+    // Console.debug("fileExplorerView", fileExplorerView)// files and dirs
     return Object.entries(fileExplorerView.fileItems)
 }
 
@@ -30,13 +22,13 @@ function getActiveItemIndex(modal: ExplorerShortcuts, items: [string, fileItem][
     return index
 }
 
-async function openLeaf(modal: ExplorerShortcuts, down = false) {
+export async function openLeaf(modal: ExplorerShortcuts, down = false) {
     const { workspace } = modal.app;
     const items = getExplorerItems(modal)// [[path, item], [path, item]...]
     if (!items) return
 
-    const activePath = workspace.getLeaf(false).view.file.path
-    const dirActivePath = activePath.split("/").slice(0, -1).join("/")
+    // const activePath = workspace.getLeaf(false).view.file.path
+    // const dirActivePath = activePath.split("/").slice(0, -1).join("/")
     const folderRemoved = getFilesOnly(items)
     let knownExtensions = filterItemsByKnownExtensions(folderRemoved, modal);// [string, fileItem][] = []
     const [rootFiles, otheFiles] = separateRootFiles(knownExtensions)
@@ -48,14 +40,16 @@ async function openLeaf(modal: ExplorerShortcuts, down = false) {
 
     const index = getActiveItemIndex(modal, sortedItems)
     // Console.debug("index", index)
+
+    // loop over all items can be annoying (options???)
+    // const newIndex = down ?
+    //     index === sortedItems.length - 1 ? 0 : index + 1 :
+    //     index === 0 ? sortedItems.length - 1 : index - 1
     const newIndex = down ?
-        index === sortedItems.length - 1 ? 0 : index + 1 :
-        index === 0 ? sortedItems.length - 1 : index - 1
+        index + 1 : index - 1
+    if (newIndex < 0 || newIndex >= sortedItems.length) return
 
     const [_path, item] = sortedItems[newIndex]
-    // Console.debug("_path", _path)
-    console.log("collapsed",)
-
     let parent = item.parent;
     while (parent && parent.collapsible) {
         if (parent.collapsible && parent.collapsed) {
@@ -96,7 +90,6 @@ function separateRootFiles(items: [string, fileItem][]) {
 }
 
 function sortFilesBeforeDirs(items: [string, fileItem][]) {
-    // il faudrait trier les fichiers racine pour les mettre à la fin
     return sortBy(items, ([_path]) => {
         const name = path.basename(_path, path.extname(_path)); // name without ext
         return name.toLocaleLowerCase();
@@ -104,22 +97,8 @@ function sortFilesBeforeDirs(items: [string, fileItem][]) {
 }
 
 
-function getElementFromMousePosition(
-    event: MouseEvent,
-    modal: ExplorerShortcuts
-) {
-    modal.mousePosition = { x: event.clientX, y: event.clientY };
-    if (modal.mousePosition) {
-        const elementFromPoint = document.elementFromPoint(
-            modal.mousePosition.x,
-            modal.mousePosition.y
-        );
-        return elementFromPoint;
-    }
-    return null;
-}
 
-export const isOverExplorer = async (event: MouseEvent, modal: ExplorerShortcuts) => {
+export const isOverExplorer = (event: MouseEvent, modal: ExplorerShortcuts) => {
     const elementFromPoint = getElementFromMousePosition(event, modal);
     if (!elementFromPoint) {
         modal.overExplorer = false;
@@ -130,6 +109,11 @@ export const isOverExplorer = async (event: MouseEvent, modal: ExplorerShortcuts
         const activeLeftSplit = getActiveSidebarLeaf.bind(this)()[0]
         const isExplorerLeaf = activeLeftSplit?.getViewState().type === 'file-explorer'
         return modal.overExplorer = isExplorerLeaf
+    }
+
+    if (!elementFromPoint) {
+        modal.overExplorer = false;
+        return
     }
     return modal.overExplorer = false
 }
