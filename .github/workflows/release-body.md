@@ -1,1 +1,1 @@
-working inside folders
+navigate with up and down arrow over explorer ok
