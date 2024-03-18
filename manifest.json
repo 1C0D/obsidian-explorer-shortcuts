@@ -1,7 +1,7 @@
 {
 	"id": "explorer-shortcuts",
 	"name": "Explorer shortcuts",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "0.15.0",
 	"description": "shortcuts for useful actions in explorer",
 	"author": "Obsidian",
