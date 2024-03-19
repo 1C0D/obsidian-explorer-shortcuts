@@ -1,15 +1,20 @@
-import { Plugin } from "obsidian";
+// error open in folder first level
+import { Notice, Plugin } from "obsidian";
 import { SampleSettingTab } from "./settings.js";
 import { DEFAULT_SETTINGS, MyPluginSettings } from "./variables.js";
-import { isOverExplorer, openLeaf } from "./navigateOverExplorer.js";
-import { explorerCut, isOverExplorerFile } from "./cutAndPaste.js";
+import { newOpenLeaf, openLeaf } from "./navigateOverExplorer.js";
+import { explorerCut } from "./cutAndPaste.js";
+import { getElementFromMousePosition, getSelectedContainer, getSelectedPaths, isOverExplorerFile, isOverExplorerFilesContainer, isOverExplorerFolder } from "./utils.js";
 
 export default class ExplorerShortcuts extends Plugin {
 	settings: MyPluginSettings;
 	mousePosition: { x: number; y: number };
-	overExplorer = false;
-	explorefileContainer: Element | null | undefined;
-	pathToPaste: string | null = null
+	elementFromPoint: Element | null;
+	explorerfilesContainer: Element | null | undefined;
+	explorerfileContainer: Element | null | undefined;
+	explorerfolderContainer: Element | null | undefined;
+	selectedElements: Element[] | [];
+	paths: string[];
 
 	async onload() {
 		await this.loadSettings();
@@ -30,31 +35,41 @@ export default class ExplorerShortcuts extends Plugin {
 	}
 }
 
+function mouseMoveEvents(event: MouseEvent, modal: ExplorerShortcuts) {
+	modal.elementFromPoint = getElementFromMousePosition(event, modal);
+	modal.explorerfilesContainer = isOverExplorerFilesContainer(modal)
+	if (!modal.explorerfilesContainer) return
+	modal.explorerfolderContainer = isOverExplorerFolder(modal)
+	modal.explorerfileContainer = isOverExplorerFile(modal)
+}
+
 export async function handleExplorerHotkeys(event: KeyboardEvent, modal: ExplorerShortcuts) {
 	// Console.debug("key", event.key)
+	if (!modal.explorerfilesContainer) return
+	
 	if (event.key === 'Escape') {
-		if(!modal.explorefileContainer)	{
-			console.log("returned")
-			return}
-		modal.explorefileContainer?.classList.remove("cut")
-		modal.pathToPaste = null
+		modal.selectedElements?.forEach(node => {
+			node.parentElement?.classList.remove("cut")
+		})
+		modal.explorerfileContainer = null
 	}
-	if (!modal.overExplorer) return
 	if (event.key === 'ArrowUp') {
-		await openLeaf(modal);
+		await newOpenLeaf(modal);
+		// await openLeaf(modal);
 	}
 	if (event.key === 'ArrowDown') {
-		await openLeaf(modal, true);
+		await newOpenLeaf(modal, true);
+		// await openLeaf(modal, true);
 	}
-	if (event.key === 'c') { // essayer ctrl et preventDefault
+
+	modal.selectedElements = getSelectedContainer(modal)
+	if (!modal.selectedElements.length) return // on pourrait couper ce qui est sous le curseur si pas de selection
+
+	if (event.key === 'x') {
+		// console.log("modal.selectedElements", modal.selectedElements)
+		modal.paths = getSelectedPaths(modal)
+		console.log("modal.selectedElements", modal.selectedElements)
 		explorerCut(event, modal)
 	}
-
 }
 
-function mouseMoveEvents(event: MouseEvent, modal: ExplorerShortcuts) {
-	isOverExplorer(event, modal)
-	// if (modal.overExplorer) {
-		modal.explorefileContainer = isOverExplorerFile(event, modal)
-	// }
-}

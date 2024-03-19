@@ -1,5 +1,5 @@
 import { sortBy } from "lodash";
-import { fileItem, TFile, WorkspaceLeaf } from "obsidian";
+import { fileItem, TAbstractFile, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import path from "path";
 import { Console } from "./Console";
 import ExplorerShortcuts from "./main";
@@ -11,6 +11,7 @@ function getExplorerItems(modal: ExplorerShortcuts) {
     const { workspace } = modal.app;
     const fileExplorerView = workspace.getLeavesOfType("file-explorer")?.first()?.view;
     if (!fileExplorerView) return;
+    console.log("fileExplorerView.file", fileExplorerView.fileItems)
     // Console.debug("fileExplorerView", fileExplorerView)// files and dirs
     return Object.entries(fileExplorerView.fileItems)
 }
@@ -20,6 +21,84 @@ function getActiveItemIndex(modal: ExplorerShortcuts, items: [string, fileItem][
     const activeView = workspace.getLeaf(false).view;
     const index = items.findIndex(([path, item]) => path === activeView.file.path);
     return index
+}
+
+export async function newOpenLeaf(modal: ExplorerShortcuts, down = true) {
+    let path;
+    let active = modal.explorerfilesContainer?.querySelector(".is-active")
+
+    // if the folder with the active file is closed
+    if (!active) {
+        const activePath = modal.app.workspace.getLeaf(false).view.file.path
+        for (const child of Array.from(modal.explorerfilesContainer!.children)) {
+            if (!child.classList.contains("nav-folder")) continue
+            console.log("child", child)
+            const dirPath = child.children[0]?.getAttribute("data-path")
+            console.log("dirPath", dirPath)
+            if (activePath.startsWith(dirPath + "/") && child.children[0]?.children[0]?.classList.contains("is-collapsed")) {
+                console.log("ici")
+                const items = getExplorerItems(modal)
+                for (const item of items!) {
+                    if (item[0].startsWith(dirPath + "/")) {
+                        item[1].parent.setCollapsed(false)
+                        break
+                    }
+                }
+            }
+        }
+        active = modal.explorerfilesContainer?.querySelector(".is-active")
+    }
+
+    let next = active?.parentElement?.nextElementSibling
+
+    // files with an unsupported extension
+    while (next?.children[0]?.classList.contains("is-unsupported")) {
+        next = next?.nextElementSibling
+    }
+
+    console.log("next", next)
+    path = next?.children[0]?.getAttribute("data-path") ?? ""
+    console.log("path", path)
+
+    if (!next) {
+        let parentDirContent = active?.parentElement?.parentElement?.parentElement?.parentElement
+        console.log("parentDirContent", parentDirContent)
+
+        for (const child of Array.from(parentDirContent!.children)) {
+            if (child.classList.contains("nav-file")) {
+                console.log("child", child)
+                path = child.children[0]?.getAttribute("data-path") ?? ""
+                console.log("path", path)
+                if (!isValidPath(modal, path)) continue
+                modal.explorerfilesContainer = child.parentElement
+                break
+            }
+        }
+    }
+
+    if (!path || !isValidPath(modal, path)) return
+    const item = getFileFromPath(modal, path)
+    if (item instanceof TFolder) {
+        console.log("it's a folder")
+        return
+    }
+    await modal.app.workspace.getLeaf(false)?.openFile(item as TFile, { active: true });
+
+}
+
+function isValidPath(modal: ExplorerShortcuts, path: string) {
+    const knownExtensions = Object.keys(modal.app.viewRegistry.typeByExtension)
+    if (!path) return false
+    const parts = path.split(".")
+    let ext
+    if (parts.length > 1) ext = parts.pop()
+    if (!ext && parts[0][0] === "/") return false// explorer title
+    return !ext || ext && knownExtensions.includes(ext)
+}
+
+const getFileFromPath = (modal: ExplorerShortcuts, _path: string): TAbstractFile | null => {
+    const absPath = path.join(modal.app.vault.configDir, _path);
+    return modal.app.vault.getAbstractFileByPath(_path)
 }
 
 export async function openLeaf(modal: ExplorerShortcuts, down = false) {
@@ -96,26 +175,9 @@ function sortFilesBeforeDirs(items: [string, fileItem][]) {
     });
 }
 
-
-
 export const isOverExplorer = (event: MouseEvent, modal: ExplorerShortcuts) => {
-    const elementFromPoint = getElementFromMousePosition(event, modal);
-    if (!elementFromPoint) {
-        modal.overExplorer = false;
-        return
-    }
-    const isLeftSplit = elementFromPoint.closest(".mod-left-split");
-    if (isLeftSplit) {
-        const activeLeftSplit = getActiveSidebarLeaf.bind(this)()[0]
-        const isExplorerLeaf = activeLeftSplit?.getViewState().type === 'file-explorer'
-        return modal.overExplorer = isExplorerLeaf
-    }
-
-    if (!elementFromPoint) {
-        modal.overExplorer = false;
-        return
-    }
-    return modal.overExplorer = false
+    const leafContent = modal.elementFromPoint?.closest(".workspace-leaf-content[data-type='file-explorer']");
+    return leafContent
 }
 
 function getActiveSidebarLeaf(): WorkspaceLeaf[] {
