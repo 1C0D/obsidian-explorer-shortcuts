@@ -16,9 +16,12 @@ export function getElementFromMousePosition(
     return null;
 }
 
-export const isOverExplorerFilesContainer = (modal: ExplorerShortcuts) => {
-    return modal.elementFromPoint?.closest(".tree-item-children.nav-folder-children");
+export const isOverExplorerContainer = (modal: ExplorerShortcuts) => {
+    return modal.elementFromPoint?.closest(".nav-files-container");
 }
+// export const isOverExplorerFilesContainer = (modal: ExplorerShortcuts) => {
+//     return modal.elementFromPoint?.closest(".tree-item-children.nav-folder-children");
+// }
 
 export const isOverExplorerFile = (modal: ExplorerShortcuts) => {
     return modal.elementFromPoint?.closest(".tree-item.nav-file");
@@ -29,7 +32,7 @@ export const isOverExplorerFolder = (modal: ExplorerShortcuts) => {
 }
 
 export function getSelectedContainer(modal: ExplorerShortcuts) {
-    return Array.from(modal.explorerfilesContainer?.querySelectorAll(".is-selected") ?? [])
+    return Array.from(modal.explorerContainer?.querySelectorAll(".is-selected") ?? [])
 }
 
 export function getSelectedPaths(modal: ExplorerShortcuts) {

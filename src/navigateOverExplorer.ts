@@ -4,6 +4,7 @@ import path from "path";
 import { Console } from "./Console";
 import ExplorerShortcuts from "./main";
 import { getElementFromMousePosition } from "./utils";
+import { parentPort } from "worker_threads";
 
 
 
@@ -23,66 +24,215 @@ function getActiveItemIndex(modal: ExplorerShortcuts, items: [string, fileItem][
     return index
 }
 
-export async function newOpenLeaf(modal: ExplorerShortcuts, down = true) {
-    let path;
-    let active = modal.explorerfilesContainer?.querySelector(".is-active")
+function getElPath(element: Element | null) {
+    return element!.children[0]!.getAttribute("data-path")
+}
 
-    // if the folder with the active file is closed
-    if (!active) {
-        const activePath = modal.app.workspace.getLeaf(false).view.file.path
-        for (const child of Array.from(modal.explorerfilesContainer!.children)) {
-            if (!child.classList.contains("nav-folder")) continue
-            console.log("child", child)
-            const dirPath = child.children[0]?.getAttribute("data-path")
-            console.log("dirPath", dirPath)
-            if (activePath.startsWith(dirPath + "/") && child.children[0]?.children[0]?.classList.contains("is-collapsed")) {
-                console.log("ici")
-                const items = getExplorerItems(modal)
-                for (const item of items!) {
-                    if (item[0].startsWith(dirPath + "/")) {
-                        item[1].parent.setCollapsed(false)
-                        break
-                    }
+function getSibling(down: boolean) {
+    return down ? "nextElementSibling" : "previousElementSibling"
+}
+
+function skipUnsupported(element: Element | null, down: boolean) {
+    if (!element) return
+    const siblingSelector = getSibling(down)
+    while (element!.children[0]?.classList.contains("is-unsupported")) {
+        if (!element) return
+        element = element[siblingSelector]
+    }
+    return element
+}
+
+function nextEl(element: Element | null, down: boolean) {
+    if (!element) return
+    const siblingSelector = getSibling(down)
+    let next = element[siblingSelector]
+    if (!next) return
+    return next
+}
+
+function isNotActivePath(active: Element | null, next: Element | null) {
+    return getElPath(active) !== getElPath(next)
+}
+
+function unfoldFOlder(modal: ExplorerShortcuts, element: Element | null) {
+    const dirPath = getElPath(element)
+    console.log("dirPath", dirPath)
+    const items = getExplorerItems(modal)
+    for (const item of items!) {
+        if (item[0].includes(dirPath!)) {
+            item[1].setCollapsed(false)
+            break
+        }
+    }
+}
+
+function getNextFile(next: Element | null, down: boolean, active: Element | null) {
+    const isUnsupported = next!.children[0].classList.contains("is-unsupported");
+    console.log("isFile")
+    if (isUnsupported) {
+        console.log("isUnsupported", isUnsupported)
+        next = skipUnsupported(next, down) ?? null
+        const isFolder = next!.classList.contains("nav-folder");
+        if (isFolder) return next
+        console.log("next after isUnsupported", next)
+    }
+    if (isNotActivePath(active, next)) {
+        console.log("isNotActivePath")
+        return next
+    }
+    console.log("next file")
+    return next
+}
+
+function nextFromFolder(modal: ExplorerShortcuts, next: Element | null, active: Element | null, down = true) {
+    console.log("folder")
+    if (next!.classList.contains("is-collapsed")) {
+        console.log("collapsed")
+        unfoldFOlder(modal, next)
+    }
+
+    const childs = next!.children[1].lastElementChild
+    console.log("childs", childs)
+
+    next = down ? next!.children[1].children[1] ?? null : next!.children[1].lastElementChild ?? null
+    console.log("next in folder", next)
+    next = getNextFile(next, down, active)
+
+    return next
+}
+
+function getNextEl(modal: ExplorerShortcuts, active: Element | null, down = true) {
+    let next = nextEl(active, down) ?? null
+    console.log("next", next)
+    if (next) {
+        const isFolder = next.classList.contains("nav-folder");
+        const isFile = next.classList.contains("nav-file");
+        if (isFile) {
+            next = getNextFile(next, down, active)
+            const isFolder = next!.classList.contains("nav-folder");
+            if (isFolder) {
+                next = nextFromFolder(modal, next, active, down)
+            }
+            return next
+        }
+        else if (isFolder) {
+            return nextFromFolder(modal, next, active, down)
+        } else {
+            console.log("else")
+            // console.log("next.parentElement", next.parentElement!.parentElement)
+            next = next.parentElement!.parentElement ?? null
+            const siblingSelector = getSibling(down)
+            next = next![siblingSelector] ?? null
+            if (next && next.classList.contains("nav-folder")) {
+                return nextFromFolder(modal, next, active, down)
+            } else {
+                next = next!.parentElement!.parentElement ?? null
+                console.log("next next", next)
+                next = next![siblingSelector] ?? null
+                if (next && next.classList.contains("nav-folder")) {
+                    next = nextFromFolder(modal, next, active, down)
+                    console.log("next", next)
+                } else {
+                    next = next!.parentElement!.parentElement ?? null
+                    console.log("next next next", next)
+                    if (next) {next = next![siblingSelector] ?? null
+                    return nextFromFolder(modal, next, active, down)}
+                    console.log("not ok")
                 }
+
+                console.log("next", next)
+                return
             }
         }
-        active = modal.explorerfilesContainer?.querySelector(".is-active")
     }
+}
 
-    let next = active?.parentElement?.nextElementSibling
 
-    // files with an unsupported extension
-    while (next?.children[0]?.classList.contains("is-unsupported")) {
-        next = next?.nextElementSibling
-    }
+async function OpenNext(modal: ExplorerShortcuts, next: Element | null) {
+    console.log("OpenNext")
+    const path = getElPath(next)
+    if (!path) return
+    const item = getFileFromPath(modal, path)
+    // if (item instanceof TFolder) {
+    //     console.log("it's a folder")
+    //     return
+    // }
+    await modal.app.workspace.getLeaf(false)?.openFile(item as TFile, { active: true });
+}
 
-    console.log("next", next)
-    path = next?.children[0]?.getAttribute("data-path") ?? ""
-    console.log("path", path)
+export async function newOpenLeaf(modal: ExplorerShortcuts, down = false) {
+    let path;
+    let next
+    let active = modal.explorerContainer?.querySelector(".is-active") ?? null
+    console.log("active", active)
+    if (!active) return
+    next = getNextEl(modal, active.parentElement, down) ?? null
 
     if (!next) {
-        let parentDirContent = active?.parentElement?.parentElement?.parentElement?.parentElement
-        console.log("parentDirContent", parentDirContent)
-
-        for (const child of Array.from(parentDirContent!.children)) {
-            if (child.classList.contains("nav-file")) {
-                console.log("child", child)
-                path = child.children[0]?.getAttribute("data-path") ?? ""
-                console.log("path", path)
-                if (!isValidPath(modal, path)) continue
-                modal.explorerfilesContainer = child.parentElement
-                break
-            }
-        }
-    }
-
-    if (!path || !isValidPath(modal, path)) return
-    const item = getFileFromPath(modal, path)
-    if (item instanceof TFolder) {
-        console.log("it's a folder")
+        console.log("returned")
         return
     }
-    await modal.app.workspace.getLeaf(false)?.openFile(item as TFile, { active: true });
+
+    await OpenNext(modal, next)
+
+
+
+    // if the folder with the active file is closed
+    // if (!active) {
+    //     const activePath = modal.app.workspace.getLeaf(false).view.file.path
+    //     for (const child of Array.from(modal.explorerfilesContainer!.children)) {
+    //         if (!child.classList.contains("nav-folder")) continue
+    //         console.log("child", child)
+    //         const dirPath = child.children[0]?.getAttribute("data-path")
+    //         console.log("dirPath", dirPath)
+    //         if (activePath.startsWith(dirPath + "/") && child.children[0]?.children[0]?.classList.contains("is-collapsed")) {
+    //             console.log("ici")
+    //             const items = getExplorerItems(modal)
+    //             for (const item of items!) {
+    //                 if (item[0].startsWith(dirPath + "/")) {
+    //                     item[1].parent.setCollapsed(false)
+    //                     break
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     active = modal.explorerfilesContainer?.querySelector(".is-active")
+    // }
+
+    // let next = active?.parentElement?.nextElementSibling
+
+    // // files with an unsupported extension
+    // while (next?.children[0]?.classList.contains("is-unsupported")) {
+    //     next = next?.nextElementSibling
+    // }
+
+    // console.log("next", next)
+    // path = next?.children[0]?.getAttribute("data-path") ?? ""
+    // console.log("path", path)
+
+    // if (!next) {
+    //     let parentDirContent = active?.parentElement?.parentElement?.parentElement?.nextElementSibling
+    //     console.log("parentDirContent", parentDirContent)
+
+    //     for (const child of Array.from(parentDirContent!.children)) {
+    //         if (child.classList.contains("nav-file")) {
+    //             console.log("child", child)
+    //             path = child.children[0]?.getAttribute("data-path") ?? ""
+    //             console.log("path", path)
+    //             if (!isValidPath(modal, path)) continue
+    //             modal.explorerfilesContainer = child.parentElement
+    //             break
+    //         }
+    //     }
+    // }
+
+    // if (!path || !isValidPath(modal, path)) return
+    // const item = getFileFromPath(modal, path)
+    // if (item instanceof TFolder) {
+    //     console.log("it's a folder")
+    //     return
+    // }
+    // await modal.app.workspace.getLeaf(false)?.openFile(item as TFile, { active: true });
 
 }
 

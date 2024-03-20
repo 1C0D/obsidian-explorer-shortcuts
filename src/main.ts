@@ -4,13 +4,13 @@ import { SampleSettingTab } from "./settings.js";
 import { DEFAULT_SETTINGS, MyPluginSettings } from "./variables.js";
 import { newOpenLeaf, openLeaf } from "./navigateOverExplorer.js";
 import { explorerCut } from "./cutAndPaste.js";
-import { getElementFromMousePosition, getSelectedContainer, getSelectedPaths, isOverExplorerFile, isOverExplorerFilesContainer, isOverExplorerFolder } from "./utils.js";
+import { getElementFromMousePosition, getSelectedContainer, getSelectedPaths, isOverExplorerContainer, isOverExplorerFile, isOverExplorerFolder } from "./utils.js";
 
 export default class ExplorerShortcuts extends Plugin {
 	settings: MyPluginSettings;
 	mousePosition: { x: number; y: number };
 	elementFromPoint: Element | null;
-	explorerfilesContainer: Element | null | undefined;
+	explorerContainer: Element | null | undefined;
 	explorerfileContainer: Element | null | undefined;
 	explorerfolderContainer: Element | null | undefined;
 	selectedElements: Element[] | [];
@@ -37,15 +37,16 @@ export default class ExplorerShortcuts extends Plugin {
 
 function mouseMoveEvents(event: MouseEvent, modal: ExplorerShortcuts) {
 	modal.elementFromPoint = getElementFromMousePosition(event, modal);
-	modal.explorerfilesContainer = isOverExplorerFilesContainer(modal)
-	if (!modal.explorerfilesContainer) return
+	modal.explorerContainer = isOverExplorerContainer(modal)
+	if (!modal.explorerContainer) return
+	// for cut copy...
 	modal.explorerfolderContainer = isOverExplorerFolder(modal)
 	modal.explorerfileContainer = isOverExplorerFile(modal)
 }
 
 export async function handleExplorerHotkeys(event: KeyboardEvent, modal: ExplorerShortcuts) {
 	// Console.debug("key", event.key)
-	if (!modal.explorerfilesContainer) return
+	if (!modal.explorerContainer) return
 	
 	if (event.key === 'Escape') {
 		modal.selectedElements?.forEach(node => {
