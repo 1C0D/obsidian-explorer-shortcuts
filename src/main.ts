@@ -2,7 +2,7 @@
 import { Notice, Plugin } from "obsidian";
 import { SampleSettingTab } from "./settings.js";
 import { DEFAULT_SETTINGS, MyPluginSettings } from "./variables.js";
-import { newOpenLeaf, openLeaf } from "./navigateOverExplorer.js";
+import { newOpenLeaf } from "./navigateOverExplorer.js";
 import { explorerCut } from "./cutAndPaste.js";
 import { getElementFromMousePosition, getSelectedContainer, getSelectedPaths, isOverExplorerContainer, isOverExplorerFile, isOverExplorerFolder } from "./utils.js";
 
