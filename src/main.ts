@@ -2,9 +2,9 @@
 import { Notice, Plugin } from "obsidian";
 import { SampleSettingTab } from "./settings.js";
 import { DEFAULT_SETTINGS, MyPluginSettings } from "./variables.js";
-import { newOpenLeaf } from "./navigateOverExplorer.js";
 import { explorerCut } from "./cutAndPaste.js";
 import { getElementFromMousePosition, getSelectedContainer, getSelectedPaths, isOverExplorerContainer, isOverExplorerFile, isOverExplorerFolder } from "./utils.js";
+import { navigateUp } from "./navigateUp.js";
 
 export default class ExplorerShortcuts extends Plugin {
 	settings: MyPluginSettings;
@@ -14,7 +14,10 @@ export default class ExplorerShortcuts extends Plugin {
 	explorerfileContainer: Element | null | undefined;
 	explorerfolderContainer: Element | null | undefined;
 	selectedElements: Element[] | [];
+	active: Element | null
 	paths: string[];
+
+	forceUnfold = true
 
 	async onload() {
 		await this.loadSettings();
@@ -48,19 +51,17 @@ export async function handleExplorerHotkeys(event: KeyboardEvent, modal: Explore
 	// Console.debug("key", event.key)
 	if (!modal.explorerContainer) return
 	
-	if (event.key === 'Escape') {
-		modal.selectedElements?.forEach(node => {
-			node.parentElement?.classList.remove("cut")
-		})
-		modal.explorerfileContainer = null
-	}
+	// if (event.key === 'Escape') {
+	// 	modal.selectedElements?.forEach(node => {
+	// 		node.parentElement?.classList.remove("cut")
+	// 	})
+	// 	modal.explorerfileContainer = null
+	// }
 	if (event.key === 'ArrowUp') {
-		await newOpenLeaf(modal);
-		// await openLeaf(modal);
+		await navigateUp(modal, false);
 	}
 	if (event.key === 'ArrowDown') {
-		await newOpenLeaf(modal, true);
-		// await openLeaf(modal, true);
+		await navigateUp(modal, true);
 	}
 
 	modal.selectedElements = getSelectedContainer(modal)
