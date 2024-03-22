@@ -23,7 +23,7 @@ export function isFolded(element: Element | null) {
     await modal.app.workspace.getLeaf(false)?.openFile(item as TFile, { active: true });
 }
 
-const getFileFromPath = (modal: ExplorerShortcuts, _path: string): TAbstractFile | null => {
+export const getFileFromPath = (modal: ExplorerShortcuts, _path: string): TAbstractFile | null => {
     const absPath = path.join(modal.app.vault.configDir, _path);
     return modal.app.vault.getAbstractFileByPath(_path)
 }

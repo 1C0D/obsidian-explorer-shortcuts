@@ -1,10 +1,14 @@
-// error open in folder first level
-import { Notice, Plugin } from "obsidian";
-import { SampleSettingTab } from "./settings.js";
-import { DEFAULT_SETTINGS, MyPluginSettings } from "./variables.js";
-import { explorerCut } from "./cutAndPaste.js";
-import { getElementFromMousePosition, getSelectedContainer, getSelectedPaths, isOverExplorerContainer, isOverExplorerFile, isOverExplorerFolder } from "./utils.js";
-import { navigateUp } from "./navigateUp.js";
+// rename
+import { Notice, Plugin, TAbstractFile, TFile, TFolder } from "obsidian";
+import { SampleSettingTab } from "./settings";
+import { DEFAULT_SETTINGS, MyPluginSettings } from "./variables";
+import { explorerCut } from "./cutAndPaste";
+import { getElementFromMousePosition, getSelectedContainer, getSelectedPaths, isOverExplorerContainer, isOverExplorerFile, isOverExplorerFolder } from "./utils";
+import { navigateOverexplorer } from "./navigateOverExplorer";
+import { rename } from "./rename";
+import { cut } from "./cut";
+import { paste } from "./paste";
+import { copy } from "./copy";
 
 export default class ExplorerShortcuts extends Plugin {
 	settings: MyPluginSettings;
@@ -14,10 +18,9 @@ export default class ExplorerShortcuts extends Plugin {
 	explorerfileContainer: Element | null | undefined;
 	explorerfolderContainer: Element | null | undefined;
 	selectedElements: Element[] | [];
-	active: Element | null
 	paths: string[];
-
-	forceUnfold = true
+	// itemFiles: (TAbstractFile | null)[]
+	operation: "copy" | "cut"
 
 	async onload() {
 		await this.loadSettings();
@@ -25,7 +28,7 @@ export default class ExplorerShortcuts extends Plugin {
 
 		this.app.workspace.onLayoutReady(() => {
 			this.registerDomEvent(document, "mousemove", (e) => mouseMoveEvents(e, this));
-			this.registerDomEvent(document, "keydown", async (e) => await handleExplorerHotkeys(e, this));
+			this.registerDomEvent(document, "keyup", async (e) => await handleExplorerHotkeys(e, this));//keyup to detect F2
 		});
 	}
 
@@ -50,28 +53,44 @@ function mouseMoveEvents(event: MouseEvent, modal: ExplorerShortcuts) {
 export async function handleExplorerHotkeys(event: KeyboardEvent, modal: ExplorerShortcuts) {
 	// Console.debug("key", event.key)
 	if (!modal.explorerContainer) return
-	
-	// if (event.key === 'Escape') {
-	// 	modal.selectedElements?.forEach(node => {
-	// 		node.parentElement?.classList.remove("cut")
-	// 	})
-	// 	modal.explorerfileContainer = null
-	// }
+
+	// navigate over explorer
 	if (event.key === 'ArrowUp') {
-		await navigateUp(modal, false);
+		await navigateOverexplorer(modal, false);
 	}
 	if (event.key === 'ArrowDown') {
-		await navigateUp(modal, true);
+		await navigateOverexplorer(modal, true);
+	}
+	if (event.key === 'F2' || event.key === 'r') {
+		rename(modal)
+	}
+
+	if (event.key === 'x') {
+		cut(modal)
+	}
+	if (event.key === 'c') {
+		copy(modal)
+	}
+	if (event.key === 'v') {
+		await paste(modal)
+	}
+
+	// cut
+	if (event.key === 'Escape') {
+		modal.selectedElements?.forEach(node => {
+			// node.parentElement?.classList.remove("cut")
+		})
+		modal.explorerfileContainer = null
 	}
 
 	modal.selectedElements = getSelectedContainer(modal)
 	if (!modal.selectedElements.length) return // on pourrait couper ce qui est sous le curseur si pas de selection
 
-	if (event.key === 'x') {
-		// console.log("modal.selectedElements", modal.selectedElements)
-		modal.paths = getSelectedPaths(modal)
-		console.log("modal.selectedElements", modal.selectedElements)
-		explorerCut(event, modal)
-	}
+	// if (event.key === 'x') {
+	// 	// console.log("modal.selectedElements", modal.selectedElements)
+	// 	modal.paths = getSelectedPaths(modal)
+	// 	console.log("modal.selectedElements", modal.selectedElements)
+	// 	explorerCut(event, modal)
+	// }
 }
 

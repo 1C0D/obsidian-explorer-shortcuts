@@ -14,8 +14,7 @@ export function explorerCut(event: KeyboardEvent, modal: ExplorerShortcuts) {
         return
     } else {
         modal.selectedElements.forEach(node => {
-            console.log("node", node)
-            node.parentElement?.classList.add("cut")
+            // node.classList.add("cut")
         })
         new Notice ("Ready to paste")
     }

@@ -1,10 +1,10 @@
 import { Console } from "./Console";
 import ExplorerShortcuts from "./main";
-import { isFolder, isFolded, unfoldFolder, isFile, OpenNext } from "./nagivateUpUtils";
+import { isFolder, isFolded, unfoldFolder, isFile, OpenNext } from "./nagivateOverExpUtils";
 
-export async function navigateUp(modal: ExplorerShortcuts, down = false) {
-    modal.active = modal.explorerContainer?.querySelector(".is-active") ?? null
-    if (!modal.active) return
+export async function navigateOverexplorer(modal: ExplorerShortcuts, down = false) {
+    const active = modal.explorerContainer?.querySelector(".is-active") ?? null
+    if (!active) return
 
     function getNextEl(modal: ExplorerShortcuts, down = false) {
 
@@ -19,7 +19,7 @@ export async function navigateUp(modal: ExplorerShortcuts, down = false) {
             });
         }
 
-        const activeIndex = Array.from(filteredList).findIndex(el => el.children[0] === modal.active)
+        const activeIndex = Array.from(filteredList).findIndex(el => el.children[0].classList.contains("is-active"));
         let nextIndex = down ? activeIndex + 1 : activeIndex - 1
         let nextElement = filteredList[nextIndex]
 
