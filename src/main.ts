@@ -117,6 +117,6 @@ export async function keyUp(e: KeyboardEvent, modal: ExplorerShortcuts) {
 }
 
 function keysToBlock(key: string) {
-	const blockedKeysList = ['n', 'r', 'x', 'c', 'v', 'Delete', 'ArrowUp', 'ArrowDown', 'Escape', 'F2'];
+	const blockedKeysList = ['n', 'r', 'x', 'c', 'v', 'Delete', 'ArrowUp', 'ArrowDown', 'F2'];
 	return blockedKeysList.includes(key);
 }
