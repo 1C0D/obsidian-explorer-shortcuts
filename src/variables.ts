@@ -1,8 +1,7 @@
-export interface MyPluginSettings {
-    mySetting: string;
-}
+import { ESSettings } from "./global";
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
-    mySetting: 'default'
+export const DEFAULT_SETTINGS: ESSettings = {
+    delConfirmFile: false,
+    delConfirmFolder: true
 }
 

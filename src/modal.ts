@@ -2,22 +2,6 @@ import { App, Modal, Setting } from "obsidian";
 
 type ConfirmCallback = (confirmed: boolean) => void;
 
-export class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText("Woah!");
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
-
 // https://github.com/eoureo/obsidian-runjs/blob/master/src/confirm_modal.ts#L51
 class ConfirmModal extends Modal {
 	constructor(

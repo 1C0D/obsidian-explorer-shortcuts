@@ -1,4 +1,9 @@
 
+.copy {
+    background-color: rgb(142, 124, 108);
+    border-radius: 3%;
+}
 .cut {
-    background-color: #f5f5f5;
+    background-color: rgb(144, 76, 115);
+    border-radius: 3%;
 }

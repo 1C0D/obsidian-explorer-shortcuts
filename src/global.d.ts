@@ -32,3 +32,8 @@ declare module "obsidian" {
         "setCollapsed": (collapsed: boolean) => void
     }
 }
+
+export interface ESSettings {
+    delConfirmFile: boolean,
+    delConfirmFolder: boolean
+}

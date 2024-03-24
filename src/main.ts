@@ -1,17 +1,17 @@
-// rename
-import { Notice, Plugin, TAbstractFile, TFile, TFolder } from "obsidian";
-import { SampleSettingTab } from "./settings";
-import { DEFAULT_SETTINGS, MyPluginSettings } from "./variables";
-import { explorerCut } from "./cutAndPaste";
-import { getElementFromMousePosition, getSelectedContainer, getSelectedPaths, isOverExplorerContainer, isOverExplorerFile, isOverExplorerFolder } from "./utils";
+import { Plugin } from "obsidian";
+import { DEFAULT_SETTINGS } from "./variables";
+import { getElementFromMousePosition, isOverExplorerContainer, isOverExplorerFile, isOverExplorerFolder } from "./utils";
 import { navigateOverexplorer } from "./navigateOverExplorer";
 import { rename } from "./rename";
 import { cut } from "./cut";
 import { paste } from "./paste";
 import { copy } from "./copy";
+import { deleteItem } from "./delete";
+import { ESSettings } from "./global";
+import { ESSettingTab } from "./settings";
 
 export default class ExplorerShortcuts extends Plugin {
-	settings: MyPluginSettings;
+	settings: ESSettings;
 	mousePosition: { x: number; y: number };
 	elementFromPoint: Element | null;
 	explorerContainer: Element | null | undefined;
@@ -19,16 +19,21 @@ export default class ExplorerShortcuts extends Plugin {
 	explorerfolderContainer: Element | null | undefined;
 	selectedElements: Element[] | [];
 	paths: string[];
-	// itemFiles: (TAbstractFile | null)[]
 	operation: "copy" | "cut"
+	renaming: boolean
+	value: string
+	altPressed: boolean
 
 	async onload() {
 		await this.loadSettings();
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new ESSettingTab(this.app, this));
 
 		this.app.workspace.onLayoutReady(() => {
 			this.registerDomEvent(document, "mousemove", (e) => mouseMoveEvents(e, this));
-			this.registerDomEvent(document, "keyup", async (e) => await handleExplorerHotkeys(e, this));//keyup to detect F2
+			this.registerDomEvent(document, "keydown", (e) => preventEditorKeyboard(e, this));
+			this.registerDomEvent(document, "keyup", async (e) => {
+				await handleExplorerHotkeys(e, this)
+			});
 		});
 	}
 
@@ -45,52 +50,61 @@ function mouseMoveEvents(event: MouseEvent, modal: ExplorerShortcuts) {
 	modal.elementFromPoint = getElementFromMousePosition(event, modal);
 	modal.explorerContainer = isOverExplorerContainer(modal)
 	if (!modal.explorerContainer) return
-	// for cut copy...
+	// cut copy...
 	modal.explorerfolderContainer = isOverExplorerFolder(modal)
 	modal.explorerfileContainer = isOverExplorerFile(modal)
 }
 
-export async function handleExplorerHotkeys(event: KeyboardEvent, modal: ExplorerShortcuts) {
-	// Console.debug("key", event.key)
-	if (!modal.explorerContainer) return
+function preventEditorKeyboard(event: KeyboardEvent, modal: ExplorerShortcuts) {
+	if (modal.explorerContainer && !modal.renaming) event.preventDefault()
+}
 
-	// navigate over explorer
+
+export async function handleExplorerHotkeys(event: KeyboardEvent, modal: ExplorerShortcuts) {
+	// console.debug("key", event.key)
+	if (!modal.explorerContainer) return
+	if (modal.renaming) return
+
+	if (event.key === 'Escape') {
+		modal.explorerContainer?.querySelectorAll(".cut").forEach(node => node.classList.remove("cut"))
+		modal.explorerContainer?.querySelectorAll(".copy").forEach(node => node.classList.remove("copy"))
+		modal.paths = []
+	}
+
 	if (event.key === 'ArrowUp') {
 		await navigateOverexplorer(modal, false);
 	}
 	if (event.key === 'ArrowDown') {
 		await navigateOverexplorer(modal, true);
 	}
-	if (event.key === 'F2' || event.key === 'r') {
+
+	if (event.key === 'Alt') {
+		modal.altPressed = true;
+		setTimeout(() => {
+			modal.altPressed = false
+		}, 1000);
+	}
+
+	if (event.key === 'F2' || event.altKey && event.key === 'r' || event.ctrlKey && event.key === 'r') {
+		modal.renaming = true
 		rename(modal)
 	}
-
-	if (event.key === 'x') {
+	// if key alt then x or alt and x at the same time. 
+	if (modal.altPressed && event.key === 'x' || event.altKey && event.key === 'x') {
 		cut(modal)
+		modal.altPressed = false
 	}
-	if (event.key === 'c') {
+	if (modal.altPressed && event.key === 'c' || event.altKey && event.key === 'c') {
 		copy(modal)
+		modal.altPressed = false
 	}
-	if (event.key === 'v') {
+	if (modal.altPressed && event.key === 'v' || event.altKey && event.key === 'v') {
 		await paste(modal)
+		modal.altPressed = false
 	}
-
-	// cut
-	if (event.key === 'Escape') {
-		modal.selectedElements?.forEach(node => {
-			// node.parentElement?.classList.remove("cut")
-		})
-		modal.explorerfileContainer = null
+	if (modal.altPressed && event.key === 'Delete' || event.altKey && event.key === 'Delete') {
+		await deleteItem(modal)
+		modal.altPressed = false
 	}
-
-	modal.selectedElements = getSelectedContainer(modal)
-	if (!modal.selectedElements.length) return // on pourrait couper ce qui est sous le curseur si pas de selection
-
-	// if (event.key === 'x') {
-	// 	// console.log("modal.selectedElements", modal.selectedElements)
-	// 	modal.paths = getSelectedPaths(modal)
-	// 	console.log("modal.selectedElements", modal.selectedElements)
-	// 	explorerCut(event, modal)
-	// }
 }
 
