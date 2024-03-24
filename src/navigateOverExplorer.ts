@@ -6,7 +6,7 @@ import { isFolder, isFolded, unfoldFolder, isFile, getElPath, getFileFromPath } 
 export async function navigateOverexplorer(modal: ExplorerShortcuts, down = false) {
     const active = modal.explorerContainer?.querySelector(".is-active") ?? null
     if (!active) return
-    const nextElement = getNextEl(modal, down)
+    const nextElement = getNextEl(modal, down) ?? null
     if (!nextElement) {
         new Notice("End of list",800)
         return
@@ -33,7 +33,7 @@ function getNextEl(modal: ExplorerShortcuts, down = false) {
     let nextIndex = down ? activeIndex + 1 : activeIndex - 1
     let nextElement = filteredList[nextIndex]
 
-    while (isFolder(nextElement) && !isFolded(nextElement)) { // empty folder. can happen after next operation(recursion)
+    while (isFolder(nextElement) && !isFolded(nextElement)) {
         nextIndex = down ? nextIndex + 1 : nextIndex - 1
         nextElement = filteredList[nextIndex]
     }

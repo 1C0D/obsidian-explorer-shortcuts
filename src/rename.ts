@@ -34,11 +34,11 @@ function addListeners(modal: ExplorerShortcuts, input: HTMLInputElement, itemFil
             input.replaceWith(hovered);
         }
     }
-    input.onkeydown = async (event) => {
-        if (event.key === "Enter") {
+    input.onkeydown = async (e) => {
+        if (e.key === "Enter") {
             input.blur()
         }
-        if (event.key === "Escape") {
+        if (e.key === "Escape") {
             modal.renaming = false
             if (hovered) {
                 await handleBlurOrEnter(modal, itemFile, pathEls, pathWithoutExt)
@@ -55,7 +55,7 @@ export function createInput(el: Element | null, currentValue: string, itemFile: 
         input.value = currentValue;
         el.replaceWith(input);
         input.focus();
-        selectValue(input);
+        // selectValue(input);
         input.onchange = async () => await handleBlurOrEnter(modal, itemFile, pathEls, input.value)
         return input;
     } else {
@@ -69,6 +69,6 @@ export const selectValue = (input: HTMLInputElement | null) => {
 
 const handleBlurOrEnter = async (modal: ExplorerShortcuts, itemFile: TAbstractFile | null, pathEls: { dir: string, name: string, ext: string }, new_path: string) => {
     const _path = pathEls.dir + "/" + new_path + pathEls.ext
-    itemFile instanceof TFile ? await app.fileManager.renameFile(itemFile as TFile, _path) : await app.vault.rename(itemFile as TFolder, _path);
+    itemFile instanceof TFile ? await modal.app.fileManager.renameFile(itemFile as TFile, _path) : await modal.app.vault.rename(itemFile as TFolder, _path);
     modal.renaming = false
 };

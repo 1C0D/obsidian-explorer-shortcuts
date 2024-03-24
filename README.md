@@ -9,12 +9,14 @@ Hover element you want to do operation on
 - `r` ou `F2` to rename
 - `c` to add files or\and folders to copy (colored)
 - `x` to add to cut
-- you can mix copy and cut
-- you can change a copy item to paste and vis versa
 - `p` paste on a destination
 - `esc` cancel
+- `n`new file
+- `f`new folder
   
-todo: F new folder, N new file
+N.B: 
+- you can mix copy and cut
+- you can change a copy item to paste and vis versa
 
 ## developpement
 (do "npm start" at first or a npm i)

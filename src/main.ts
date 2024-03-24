@@ -9,6 +9,7 @@ import { copy } from "./copy";
 import { deleteItem } from "./delete";
 import { ESSettings } from "./global";
 import { ESSettingTab } from "./settings";
+import { createNewItem } from "./newFileFolder";
 
 export default class ExplorerShortcuts extends Plugin {
 	settings: ESSettings;
@@ -29,8 +30,10 @@ export default class ExplorerShortcuts extends Plugin {
 
 		this.app.workspace.onLayoutReady(() => {
 			this.registerDomEvent(document, "mousemove", (e) => mouseMoveEvents(e, this));
-			this.registerDomEvent(document, "keydown", (e) => preventEditorKeyboard(e, this));
-			this.registerDomEvent(document, "keyup", async (e) => await handleExplorerHotkeys(e, this));
+			this.registerDomEvent(document, "keydown", (e) => {
+				keyDown(e, this)
+			});
+			this.registerDomEvent(document, "keyup", async (e) => await keyUp(e, this));
 		});
 	}
 
@@ -43,8 +46,8 @@ export default class ExplorerShortcuts extends Plugin {
 	}
 }
 
-function mouseMoveEvents(event: MouseEvent, modal: ExplorerShortcuts) {
-	modal.elementFromPoint = getElementFromMousePosition(event, modal);
+function mouseMoveEvents(e: MouseEvent, modal: ExplorerShortcuts) {
+	modal.elementFromPoint = getElementFromMousePosition(e, modal);
 	modal.explorerContainer = isOverExplorerContainer(modal)
 	if (!modal.explorerContainer) return
 	// cut copy...
@@ -52,43 +55,68 @@ function mouseMoveEvents(event: MouseEvent, modal: ExplorerShortcuts) {
 	modal.explorerfileContainer = isOverExplorerFile(modal)
 }
 
-function preventEditorKeyboard(event: KeyboardEvent, modal: ExplorerShortcuts) {
-	if (modal.explorerContainer && !modal.renaming && modal.beingRenamed) event.preventDefault()
+let blockedKeys: Record<string, boolean> = {};
+async function keyDown(e: KeyboardEvent, modal: ExplorerShortcuts) {
+	// console.log(e.key);
+	if (!modal.explorerContainer) return;
+	if (modal.renaming) return
+	if (keysToBlock(e.key)) {
+		e.preventDefault();
+		blockedKeys[e.key] = true;
+	}
 }
 
-export async function handleExplorerHotkeys(event: KeyboardEvent, modal: ExplorerShortcuts) {
-	// console.debug("key", event.key)
+export async function keyUp(e: KeyboardEvent, modal: ExplorerShortcuts) {
 	if (!modal.explorerContainer) return
-	const hovered = getHoveredElement(modal)
 	const beingRenamed = modal.explorerContainer.querySelector(".is-being-renamed")
-	if (beingRenamed || modal.renaming) return
-	if (event.key === 'Escape') {
+
+	if (beingRenamed) {
+		if (blockedKeys[e.key]) {
+			delete blockedKeys[e.key];
+		}
+	}
+
+	if (e.key === 'Escape') {
 		modal.explorerContainer?.querySelectorAll(".cut").forEach(node => node.classList.remove("cut"))
 		modal.explorerContainer?.querySelectorAll(".copy").forEach(node => node.classList.remove("copy"))
 		modal.paths = []
 	}
 
-	if (event.key === 'ArrowUp') {
-		await navigateOverexplorer(modal, false);
+	if (modal.renaming) {
+		blockedKeys = {}
+		return
 	}
-	if (event.key === 'ArrowDown') {
-		await navigateOverexplorer(modal, true);
-	}
-	if (event.key === 'F2' || event.key === 'r') {
-		if (!beingRenamed) modal.renaming = true
+	if (e.key === 'r' || e.key === 'F2') {
+		modal.renaming = true
 		rename(modal)
 	}
-	if (event.key === 'x') {
+	if (e.key === 'n') {
+		await createNewItem(modal, "file")
+	}
+	if (e.key === 'f') {
+		await createNewItem(modal, "folder")
+	}
+	if (e.key === 'ArrowUp') {
+		await navigateOverexplorer(modal, false);
+	}
+	if (e.key === 'ArrowDown') {
+		await navigateOverexplorer(modal, true);
+	}
+	if (e.key === 'x') {
 		cut(modal)
 	}
-	if (event.key === 'c') {
+	if (e.key === 'c') {
 		copy(modal)
 	}
-	if (event.key === 'v') {
+	if (e.key === 'v') {
 		await paste(modal)
 	}
-	if (event.key === 'Delete') {
+	if (e.key === 'Delete') {
 		await deleteItem(modal)
 	}
 }
 
+function keysToBlock(key: string) {
+	const blockedKeysList = ['n', 'r', 'x', 'c', 'v', 'Delete', 'ArrowUp', 'ArrowDown', 'Escape', 'F2'];
+	return blockedKeysList.includes(key);
+}
