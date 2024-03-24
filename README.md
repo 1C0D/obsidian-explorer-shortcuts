@@ -1,6 +1,20 @@
-# Obsidian explorer shortcuts
+# Explorer Shortcuts
 
-Add useful shortcuts for operations on explorer content 
+Manage the explorer with shortcuts
+
+- Navigate between explorer files, starting from the active file, using `↓↑` (auto unfold and scroll)
+
+Hover element you want to do operation on
+
+- `r` ou `F2` to rename
+- `c` to add files or\and folders to copy (colored)
+- `x` to add to cut
+- you can mix copy and cut
+- you can change a copy item to paste and vis versa
+- `p` paste on a destination
+- `esc` cancel
+  
+todo: F new folder, N new file
 
 ## developpement
 (do "npm start" at first or a npm i)
