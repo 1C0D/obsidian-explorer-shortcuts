@@ -28,8 +28,8 @@ export function getPathEls(_path: string) {
 
 function addListeners(modal: ExplorerShortcuts, input: HTMLInputElement, itemFile: TAbstractFile | null, pathEls: { dir: string, name: string, ext: string }, hovered: Element, pathWithoutExt: string) {
     input.onblur = async () => {
-        modal.value= ""
         modal.renaming = false
+        if (!input.value.trim()) await handleBlurOrEnter(modal, itemFile, pathEls, pathWithoutExt);
         if (hovered) {
             input.replaceWith(hovered);
         }
@@ -41,17 +41,11 @@ function addListeners(modal: ExplorerShortcuts, input: HTMLInputElement, itemFil
         if (event.key === "Escape") {
             modal.renaming = false
             if (hovered) {
-                modal.value = pathWithoutExt
-                await validateRename(modal, itemFile, pathEls, input, hovered)
+                await handleBlurOrEnter(modal, itemFile, pathEls, pathWithoutExt)
                 input.replaceWith(hovered);
             }
         }
     }
-}
-
-async function validateRename(modal: ExplorerShortcuts, itemFile: TAbstractFile | null, pathEls: { dir: string, name: string, ext: string }, input: HTMLInputElement, hovered: Element) {
-    const new_path = modal.value
-    await handleBlurOrEnter(modal, itemFile, pathEls, new_path)
 }
 
 export function createInput(el: Element | null, currentValue: string, itemFile: TAbstractFile | null, pathEls: { dir: string, name: string, ext: string }, modal: ExplorerShortcuts) {

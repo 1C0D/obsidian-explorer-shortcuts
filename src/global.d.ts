@@ -5,9 +5,9 @@ declare module "obsidian" {
         viewRegistry: any
     }
 
-    interface DataAdapter {
-        getFullPath: (normalizedPath: string) => string;
-    }
+    // interface DataAdapter {
+    //     getFullPath: (normalizedPath: string) => string;
+    // }
 
     interface View {
         fileItems: fileItem[],

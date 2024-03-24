@@ -2,7 +2,7 @@ import path from "path";
 import ExplorerShortcuts from "./main";
 import { getElPath, getFileFromPath } from "./nagivateOverExpUtils";
 import { getPathEls } from "./rename";
-import { TAbstractFile, TFile, TFolder, normalizePath } from "obsidian";
+import { Notice, TAbstractFile, TFile, TFolder, normalizePath } from "obsidian";
 import { getHoveredElement } from "./utils";
 
 export async function paste(modal: ExplorerShortcuts) {
@@ -11,6 +11,10 @@ export async function paste(modal: ExplorerShortcuts) {
     if (!destDir) return
     for (const itemPath of modal.paths) {
         const newPath = getNewPath(destDir, itemPath);
+        if (this.app.vault.getAbstractFileByPath(newPath)){
+            new Notice("File or Folder already exists in destination",2000)
+            return
+        }
         if (itemPath === newPath) continue
         const itemFile = getFileFromPath(modal, itemPath);
         if (itemFile) {
