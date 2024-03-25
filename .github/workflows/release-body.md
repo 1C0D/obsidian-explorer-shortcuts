@@ -1,1 +1,1 @@
-navigate with up and down arrow over explorer ok
+stable version
