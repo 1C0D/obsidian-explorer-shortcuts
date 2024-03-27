@@ -1,1 +1,1 @@
-new file folder ok
+trigger delete
