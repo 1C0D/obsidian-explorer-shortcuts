@@ -1,1 +1,1 @@
-fix add folder name without extension
+files didn't need adding extensions (error last release)
