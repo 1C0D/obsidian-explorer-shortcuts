@@ -1,6 +1,6 @@
 {
 	"name": "explorer-shortcuts",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "desc",
 	"main": "main.js",
 	"type": "module",
