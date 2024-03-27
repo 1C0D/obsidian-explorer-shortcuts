@@ -12,7 +12,6 @@ export async function createNewItem(modal: ExplorerShortcuts, type: 'file' | 'fo
         path = destDir + "/" + `Untitled ${i}`;
     }
     if (type === 'file') {
-        path = path + ".md";
         const file = await modal.app.vault.create(path, "");
         const leaf = modal.app.workspace.getLeaf('tab')
         leaf.openFile(file, {
