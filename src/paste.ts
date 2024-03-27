@@ -54,11 +54,11 @@ async function cut(modal: ExplorerShortcuts, itemFile: TAbstractFile, newPath: s
     itemFile instanceof TFile ? await modal.app.fileManager.renameFile(itemFile as TFile, newPath) : await modal.app.vault.rename(itemFile as TFolder, newPath);
 }
 
-export function getDestination(modal: ExplorerShortcuts) {
+export function getDestination(modal: ExplorerShortcuts, dir = false) {
     const hovered = getHoveredElement(modal)
     if (!hovered) return
     const _path = getElPath(hovered)
-    return path.extname(_path) ? normalizePath(path.dirname(_path)) : _path
+    return (path.extname(_path)) ? normalizePath(path.dirname(_path)) : _path
 }
 
 function getNewPath(destDir: string, itemPath: string) {

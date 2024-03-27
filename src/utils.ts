@@ -19,10 +19,10 @@ export const isOverExplorerContainer = (modal: ExplorerShortcuts) => {
     return modal.elementFromPoint?.closest(".nav-files-container");
 }
 
-// export const isOverExplorer = (event: MouseEvent, modal: ExplorerShortcuts) => {
-//     const leafContent = modal.elementFromPoint?.closest(".workspace-leaf-content[data-type='file-explorer']");
-//     return leafContent
-// }
+export const isOverExplorer = (event: MouseEvent, modal: ExplorerShortcuts) => {
+    const leafContent = modal.elementFromPoint?.closest(".workspace-leaf-content[data-type='file-explorer']");
+    return leafContent
+}
 
 export const isOverExplorerFile = (modal: ExplorerShortcuts) => {
     return modal.elementFromPoint?.closest(".tree-item.nav-file");
