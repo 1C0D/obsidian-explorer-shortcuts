@@ -1,1 +1,1 @@
-files didn't need adding extensions (error last release)
+new file folder ok
