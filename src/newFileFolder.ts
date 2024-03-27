@@ -1,15 +1,28 @@
+import { normalizePath } from "obsidian";
 import ExplorerShortcuts from "./main";
 import { getDestination } from "./paste";
 
 
 export async function createNewItem(modal: ExplorerShortcuts, type: 'file' | 'folder') {
-    let destDir = getDestination(modal, true) || ""
-    if (!destDir) return
-    let path = type === 'file' ? destDir + "/" + `Untitled.md` : destDir + "/" + `Untitled`;
+    let destDir = getDestination(modal, true) || "."
+    let path;
+    if (type === 'file') {
+        path = destDir === "." ? "" : destDir + "/";
+        path = path + `Untitled.md`;
+    } else {
+        path = destDir === "." ? "" : destDir + "/";
+        path = path + `Untitled`;
+    }
     let i = 0;
-    while (modal.app.vault.getAbstractFileByPath(path)) {
+    while (modal.app.vault.getAbstractFileByPath(normalizePath(path))) {
         i++;
-        path = destDir + "/" + `Untitled ${i}`;
+        if (type === 'file') {
+            path = destDir === "." ? "" : destDir + "/";
+            path = path + `Untitled ${i}` + ".md";
+        } else {
+            path = destDir === "." ? "" : destDir + "/";
+            path = path + `Untitled ${i}`
+        }
     }
     if (type === 'file') {
         const file = await modal.app.vault.create(path, "");
