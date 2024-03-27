@@ -8,9 +8,9 @@ export async function deleteItem(modal: ExplorerShortcuts) {
     const hovered = getHoveredElement(modal)
     if (!hovered) return
     const _path = getElPath(hovered)
+    if (!_path) return
     const itemFile = getFileFromPath(modal, _path);
-    if (!itemFile) triggerDelete(modal)
-    if (!itemFile) return
+    if (!itemFile) return -1
     let confirmed = true
     if (modal.settings.delConfirmFile && itemFile instanceof TFile){
         confirmed = await confirm(" Are you sure you want to delete " + itemFile.name + "?")
@@ -21,10 +21,10 @@ export async function deleteItem(modal: ExplorerShortcuts) {
     const text = itemFile instanceof TFile ? "File" : "Folder"
     new Notice(`${text} removed: `+ itemFile.name,2000)
     await modal.app.vault.trash(itemFile, true)
+    return
 }
 
-
-async function triggerDelete(modal: ExplorerShortcuts) {
+export async function triggerDelete(modal: ExplorerShortcuts) {
     // trigger a mouse move event to refresh the selectedElements
     const e = new MouseEvent('mousemove', { clientX: modal.mousePosition.x + 1, clientY: modal.mousePosition.y + 1 });
     document.dispatchEvent(e);

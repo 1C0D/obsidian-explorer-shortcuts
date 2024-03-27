@@ -6,7 +6,7 @@ import { rename } from "./rename";
 import { cut } from "./cut";
 import { paste } from "./paste";
 import { copy } from "./copy";
-import { deleteItem } from "./delete";
+import { deleteItem, triggerDelete } from "./delete";
 import { ESSettings } from "./global";
 import { ESSettingTab } from "./settings";
 import { createNewItem } from "./newFileFolder";
@@ -77,9 +77,7 @@ export async function keyUp(e: KeyboardEvent, modal: ExplorerShortcuts) {
 	}
 
 	if (e.key === 'Escape') {
-		modal.explorerContainer?.querySelectorAll(".cut").forEach(node => node.classList.remove("cut"))
-		modal.explorerContainer?.querySelectorAll(".copy").forEach(node => node.classList.remove("copy"))
-		modal.paths = []
+		resetCopyCut(modal)
 	}
 
 	if (modal.renaming) {
@@ -112,11 +110,20 @@ export async function keyUp(e: KeyboardEvent, modal: ExplorerShortcuts) {
 		await paste(modal)
 	}
 	if (e.key === 'Delete') {
-		await deleteItem(modal)
+		const ret = await deleteItem(modal)
+		if (ret === -1) { // to repeat delete on the same place
+			await triggerDelete(modal)
+		}
 	}
 }
 
 function keysToBlock(key: string) {
 	const blockedKeysList = ['n', 'r', 'x', 'c', 'v', 'Delete', 'ArrowUp', 'ArrowDown', 'F2'];
 	return blockedKeysList.includes(key);
+}
+
+function resetCopyCut(modal: ExplorerShortcuts) {
+	modal.paths = []
+	modal.explorerContainer?.querySelectorAll(".cut").forEach(node => node.classList.remove("cut"))
+	modal.explorerContainer?.querySelectorAll(".copy").forEach(node => node.classList.remove("copy"))
 }

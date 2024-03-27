@@ -4,30 +4,74 @@ import { getElPath, getFileFromPath } from "./nagivateOverExpUtils";
 import { getPathEls } from "./rename";
 import { Notice, TAbstractFile, TFile, TFolder, normalizePath } from "obsidian";
 import { getHoveredElement } from "./utils";
+import { confirm } from "./modal"
+import { incrementName } from "./newFileFolder";
 
 export async function paste(modal: ExplorerShortcuts) {
     if (!modal.paths) return
     let destDir = getDestination(modal) || ""// dir from dir or file
     if (!destDir) return
     for (const itemPath of modal.paths) {
-        const newPath = getNewPath(destDir, itemPath);
-        if (this.app.vault.getAbstractFileByPath(newPath)){
-            new Notice("File or Folder already exists in destination",2000)
-            return
+        let newPath = getNewPath(destDir, itemPath);
+        let confirmed = false
+        const itemFileExists = this.app.vault.getAbstractFileByPath(newPath);
+        if (!newPath || itemPath === newPath) {
+            new Notice("No path specified or same path", 2000)
+            continue
         }
-        if (itemPath === newPath) continue
+        if (itemFileExists) {
+            const itemKind = itemFileExists ? itemFileExists instanceof TFile ? "file" : "folder" : null;
+            confirmed = await confirm("File or Folder already exists. Increment name or cancel")
+            if (!confirmed) continue
+            else { newPath = incrementName(modal, itemKind) || "" }
+        }
+        if (isSubPath(destDir, itemPath)) {
+            new Notice("Cannot paste into a subpath", 2000)
+            continue
+        }
         const itemFile = getFileFromPath(modal, itemPath);
         if (itemFile) {
             if (modal.operation === "cut") {
                 await cut(modal, itemFile, newPath)
+                if (modal.explorerContainer) {
+                    let arr = Array.from(modal.explorerContainer.querySelectorAll(".cut"))
+                    // rest of the code here
+                    arr.filter(node => {
+                        getElPath(node) === destDir
+                    }).forEach(node => {
+                        node.classList.remove("cut")
+                    })
+                }
             } else { // copy
                 await copy(modal, itemFile, newPath)
+                if (modal.explorerContainer) {
+                    let arr = Array.from(modal.explorerContainer.querySelectorAll(".copy"))
+                    // rest of the code here
+                    arr.filter(node => {
+                        getElPath(node) === destDir
+                    }).forEach(node => {
+                        node.classList.remove("copy")
+                    })
+                }
             }
+            modal.paths = modal.paths.filter(p => p !== itemPath)
         }
     }
-    modal.explorerContainer?.querySelectorAll(".cut").forEach(node => node.classList.remove("cut"))
-    modal.explorerContainer?.querySelectorAll(".copy").forEach(node => node.classList.remove("copy"))
-    modal.paths = []
+}
+
+function isSubPath(destDir: string, itemPath: string) {
+    const destDirParts = destDir.split('/');
+    const itemPathParts = itemPath.split('/');
+    const destDirLength = destDirParts.length;
+    const itemPathLength = itemPathParts.length;
+    if (destDirLength < itemPathLength) {
+        return false
+    };
+    const tokeep = destDirParts.slice(0, itemPathLength).join('/')
+    if (tokeep === itemPath) {
+        return true
+    };
+    return false
 }
 
 async function copy(modal: ExplorerShortcuts, itemFile: TAbstractFile, newPath: string) {
@@ -66,7 +110,3 @@ function getNewPath(destDir: string, itemPath: string) {
     const newPath = normalizePath(path.join(destDir, name + ext));
     return newPath
 }
-
-
-
-

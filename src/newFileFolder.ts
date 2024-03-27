@@ -4,6 +4,22 @@ import { getDestination } from "./paste";
 
 
 export async function createNewItem(modal: ExplorerShortcuts, type: 'file' | 'folder') {
+    const path = incrementName(modal, type);
+    if (!path) return
+    if (type === 'file') {
+        const file = await modal.app.vault.create(path, "");
+        const leaf = modal.app.workspace.getLeaf('tab')
+        leaf.openFile(file, {
+            state: { mode: "source" },
+            eState: { rename: "start" },
+        });
+    } else {
+        await modal.app.vault.createFolder(path);
+    }
+};
+
+export function incrementName(modal: ExplorerShortcuts, type: 'file' | 'folder' | null) {
+    if (!type) return
     let destDir = getDestination(modal, true) || "."
     let path;
     if (type === 'file') {
@@ -24,14 +40,5 @@ export async function createNewItem(modal: ExplorerShortcuts, type: 'file' | 'fo
             path = path + `Untitled ${i}`
         }
     }
-    if (type === 'file') {
-        const file = await modal.app.vault.create(path, "");
-        const leaf = modal.app.workspace.getLeaf('tab')
-        leaf.openFile(file, {
-            state: { mode: "source" },
-            eState: { rename: "start" },
-        });
-    } else {
-        await modal.app.vault.createFolder(path);
-    }
-};
+    return path
+}

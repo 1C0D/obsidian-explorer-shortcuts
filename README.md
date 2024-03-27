@@ -6,13 +6,13 @@ Manage the explorer with shortcuts
 
 Hover element you want to do operation on
 
-- `r` ou `F2` to rename
 - `c` to add files or\and folders to copy (colored)
 - `x` to add to cut
-- `p` paste on a destination
 - `esc` cancel
+- `p` paste on a destination
 - `n`new file
 - `f`new folder
+- `r` ou `F2` to rename
   
 N.B: 
 - you can mix copy and cut
