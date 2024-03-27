@@ -1,1 +1,1 @@
-stable version
+fix add folder name without extension
