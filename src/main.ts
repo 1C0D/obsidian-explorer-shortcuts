@@ -68,7 +68,6 @@ async function keyDown(e: KeyboardEvent, modal: ExplorerShortcuts) {
 
 export async function keyUp(e: KeyboardEvent, modal: ExplorerShortcuts) {
 	if (!modal.explorerContainer?.parentElement) return
-	console.log("modal.explorerContainer?.parentElement", modal.explorerContainer?.parentElement)
 	const beingRenamed = modal.explorerContainer.querySelector(".is-being-renamed")
 
 	if (beingRenamed) {
